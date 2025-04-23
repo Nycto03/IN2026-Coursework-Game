@@ -2,15 +2,24 @@
 #define __ASTEROID_H__
 
 #include "GameObject.h"
+#include <memory>
 
-class Asteroid : public GameObject
-{
+class Asteroid : public GameObject {
 public:
-	Asteroid(void);
-	~Asteroid(void);
+    // Default ctor: creates a large asteroid
+    Asteroid();
 
-	bool CollisionTest(shared_ptr<GameObject> o);
-	void OnCollision(const GameObjectList& objects);
+    // Creates a large (isLarge=true) or small (isLarge=false) asteroid
+    Asteroid(bool isLarge);
+
+    ~Asteroid();
+
+    bool CollisionTest(std::shared_ptr<GameObject> o) override;
+    void OnCollision(const GameObjectList& objects) override;
+
+private:
+    bool mIsLarge;                // track large vs small
+    void CreateSmallAsteroids();  // spawn smaller pieces
 };
 
 #endif
