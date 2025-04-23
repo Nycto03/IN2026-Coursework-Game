@@ -29,5 +29,31 @@ bool Asteroid::CollisionTest(shared_ptr<GameObject> o)
 
 void Asteroid::OnCollision(const GameObjectList& objects)
 {
-	mWorld->FlagForRemoval(GetThisPtr());
+    for (auto& obj : objects) {
+        // Check if the collided object is an asteroid
+        if (obj->GetType() == GameObjectType("Asteroid")) {
+            Asteroid* other = static_cast<Asteroid*>(obj.get());
+            // Only handle collision if this asteroid's pointer is less than the other's
+            if (this < other) {
+                // Calculate the normal vector (from this to other)
+                GLVector3f n = (other->GetPosition() - mPosition);
+                n.normalize();
+                // Get current velocities
+                GLVector3f vA = mVelocity;
+                GLVector3f vB = other->GetVelocity();
+                // Calculate the dot product for the velocity difference
+                float dot_prod = (vA - vB).dot(n);
+                // Compute new velocities
+                GLVector3f vA_new = vA - dot_prod * n;
+                GLVector3f vB_new = vB + dot_prod * n; 
+                // Update velocities
+                SetVelocity(vA_new);
+                other->SetVelocity(vB_new);
+            }
+        }
+        else {
+            // For now, remove asteroid on collision with non-asteroids (e.g., spaceship, bullet)
+            mWorld->FlagForRemoval(GetThisPtr());
+        }
+    }
 }
