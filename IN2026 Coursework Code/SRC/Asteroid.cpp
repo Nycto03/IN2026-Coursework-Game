@@ -82,17 +82,20 @@ void Asteroid::OnCollision(const GameObjectList& objects) {
         }
         // Asteroid-Bullet collision: split if large, remove asteroid and bullet
         else if (type == GameObjectType("Bullet")) {
+            mDestroyedBySpaceship = false;
+            mWorld->FlagForRemoval(GetThisPtr());
+            //mWorld->FlagForRemoval(obj);
             if (mIsLarge) {
                 CreateSmallAsteroids();
             }
-            mWorld->FlagForRemoval(GetThisPtr());
-            mWorld->FlagForRemoval(obj);
         }
 
         //Asteroid - Spaceship collision, if large asteroid destroy both, if small asteroid bounce (WIP)
         else if (type == GameObjectType("Spaceship")) {
             auto ship = std::static_pointer_cast<Spaceship>(obj);
             if (mIsLarge) {
+                //Mark as destroyed by spaceship
+                mDestroyedBySpaceship = true; 
                 mWorld->FlagForRemoval(GetThisPtr());
                 mWorld->FlagForRemoval(obj);
             }
