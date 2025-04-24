@@ -1,4 +1,5 @@
 #include <stdlib.h>
+#include <cmath>
 #include <memory>
 #include "GameUtil.h"
 #include "Asteroid.h"
@@ -12,6 +13,8 @@ Asteroid::Asteroid()
 {
 }
 
+
+// Main constructor, sets the size flag, shape, and initializes
 Asteroid::Asteroid(bool isLarge) : GameObject("Asteroid"), mIsLarge(isLarge)
 {
 
@@ -21,12 +24,18 @@ Asteroid::Asteroid(bool isLarge) : GameObject("Asteroid"), mIsLarge(isLarge)
 	mPosition.y = rand() / 2;
 	mPosition.z = 0.0;
 
-    // You can adjust speed for small asteroids if desired
+    // compute speed & velocity
     float speed = 10.0f;
+    mVelocity.x = speed * cos(DEG2RAD * mAngle);
+    mVelocity.y = speed * sin(DEG2RAD * mAngle);
+    mVelocity.z = 0.0f;
 
-	mVelocity.x = 10.0 * cos(DEG2RAD*mAngle);
-	mVelocity.y = 10.0 * sin(DEG2RAD*mAngle);
-	mVelocity.z = 0.0;
+}
+
+void Asteroid::Init()
+{
+    float r = mIsLarge ? LARGE_RADIUS : SMALL_RADIUS;
+    mBoundingShape = std::make_shared<BoundingSphere>(GetThisPtr(), r);
 }
 
 Asteroid::~Asteroid(void)
@@ -47,9 +56,11 @@ bool Asteroid::CollisionTest(shared_ptr<GameObject> o)
 
 }
 
-void Asteroid::OnCollision(const GameObjectList& objects)
-{
+void Asteroid::OnCollision(const GameObjectList& objects) {
     for (auto& obj : objects) {
+        GameObjectType type = obj->GetType();
+
+        //Asteroid - Asteroid collision = bounce
         if (obj->GetType() == GameObjectType("Asteroid")) {
             auto other = std::static_pointer_cast<Asteroid>(obj);
             if (this < other.get()) {
@@ -63,12 +74,25 @@ void Asteroid::OnCollision(const GameObjectList& objects)
                 }
             }
         }
+
+
+        //Asteroid - Bullet collision, if large split the asteroid in 2, if small destroy (WIP)
         else if (obj->GetType() == GameObjectType("Bullet")) {
-            if (mIsLarge) CreateSmallAsteroids();
+            if (mIsLarge) {
+                CreateSmallAsteroids();
+            }
+            // always remove this asteroid
             mWorld->FlagForRemoval(GetThisPtr());
+            // remove the bullet itself
+            mWorld->FlagForRemoval(obj);
+            return;
         }
+
+        //Asteroid - Spaceship collision, if large asteroid destroy both, if small asteroid bounce (WIP)
         else if (obj->GetType() == GameObjectType("Spaceship")) {
             auto ship = std::static_pointer_cast<Spaceship>(obj);
+
+            /*
             if (mIsLarge) {
                 mWorld->FlagForRemoval(GetThisPtr());
             }
@@ -81,34 +105,53 @@ void Asteroid::OnCollision(const GameObjectList& objects)
                     SetVelocity(vA - n * rel);
                     ship->SetVelocity(vS + n * rel);
                 }
+            }*/
+
+
+
+            // destroy asteroid
+            mWorld->FlagForRemoval(GetThisPtr());
+            // if small, bounce; if large, just kill ship
+            if (!mIsLarge) {
+                GLVector3f delta = ship->GetPosition() - mPosition;
+                GLVector3f n = delta;
+                n.normalize();
+                GLVector3f vA = mVelocity;
+                GLVector3f vS = ship->GetVelocity();
+                float rel = (vA - vS).dot(n);
+                if (rel > 0.0f) {
+                    SetVelocity(vA - n * rel);
+                    ship->SetVelocity(vS + n * rel);
+                }
             }
+            // destroy the ship
+            mWorld->FlagForRemoval(obj);
+            return;
         }
     }
 }
-
-
-
 
 
 void Asteroid::CreateSmallAsteroids()
 {
     // Spawn two smaller asteroids at current position
     const int pieces = 2;
+    float speed = mVelocity.length();
     for (int i = 0; i < pieces; ++i) {
         auto small = std::make_shared<Asteroid>(false);
         // place at same spot
         small->SetPosition(mPosition);
         // give them random velocity based on original
         float angleOff = static_cast<float>(rand() % 360);
-        float speed = mVelocity.length();
         float newAngle = mAngle + angleOff;
+
         GLVector3f vel(
             speed * cos(DEG2RAD * newAngle),
             speed * sin(DEG2RAD * newAngle),
             0.0f
         );
         small->SetVelocity(vel);
-        // add to world
+        small->Init();
         mWorld->AddObject(small);
     }
 }
