@@ -1,11 +1,15 @@
 #include <stdlib.h>
 #include <cmath>
 #include <memory>
+#include <iostream> // For std::cerr
 #include "GameUtil.h"
 #include "Asteroid.h"
 #include "BoundingShape.h"
 #include "Spaceship.h"
 #include "GameWorld.h"
+#include "AnimationManager.h"
+#include "Animation.h"
+#include "Sprite.h"
 
 
 Asteroid::Asteroid()
@@ -36,6 +40,8 @@ void Asteroid::Init()
 {
     float r = mIsLarge ? LARGE_RADIUS : SMALL_RADIUS;
     mBoundingShape = std::make_shared<BoundingSphere>(GetThisPtr(), r);
+    // Set scale for rendering: large = 0.2f, small = 0.1f
+    SetScale(mIsLarge ? 0.2f : 0.1f);
 }
 
 Asteroid::~Asteroid(void)
@@ -61,7 +67,7 @@ void Asteroid::OnCollision(const GameObjectList& objects) {
         GameObjectType type = obj->GetType();
 
         //Asteroid - Asteroid collision = bounce
-        if (obj->GetType() == GameObjectType("Asteroid")) {
+        if (type == GameObjectType("Asteroid")) {
             auto other = std::static_pointer_cast<Asteroid>(obj);
             if (this < other.get()) {
                 GLVector3f n = (other->GetPosition() - mPosition);
@@ -74,45 +80,23 @@ void Asteroid::OnCollision(const GameObjectList& objects) {
                 }
             }
         }
-
-
-        //Asteroid - Bullet collision, if large split the asteroid in 2, if small destroy (WIP)
-        else if (obj->GetType() == GameObjectType("Bullet")) {
+        // Asteroid-Bullet collision: split if large, remove asteroid and bullet
+        else if (type == GameObjectType("Bullet")) {
             if (mIsLarge) {
                 CreateSmallAsteroids();
             }
-            // always remove this asteroid
             mWorld->FlagForRemoval(GetThisPtr());
-            // remove the bullet itself
             mWorld->FlagForRemoval(obj);
-            return;
         }
 
         //Asteroid - Spaceship collision, if large asteroid destroy both, if small asteroid bounce (WIP)
-        else if (obj->GetType() == GameObjectType("Spaceship")) {
+        else if (type == GameObjectType("Spaceship")) {
             auto ship = std::static_pointer_cast<Spaceship>(obj);
-
-            /*
             if (mIsLarge) {
                 mWorld->FlagForRemoval(GetThisPtr());
+                mWorld->FlagForRemoval(obj);
             }
             else {
-                GLVector3f n = (ship->GetPosition() - mPosition);
-                n.normalize();
-                GLVector3f vA = mVelocity, vS = ship->GetVelocity();
-                float rel = (vA - vS).dot(n);
-                if (rel > 0.0f) {
-                    SetVelocity(vA - n * rel);
-                    ship->SetVelocity(vS + n * rel);
-                }
-            }*/
-
-
-
-            // destroy asteroid
-            mWorld->FlagForRemoval(GetThisPtr());
-            // if small, bounce; if large, just kill ship
-            if (!mIsLarge) {
                 GLVector3f delta = ship->GetPosition() - mPosition;
                 GLVector3f n = delta;
                 n.normalize();
@@ -123,15 +107,50 @@ void Asteroid::OnCollision(const GameObjectList& objects) {
                     SetVelocity(vA - n * rel);
                     ship->SetVelocity(vS + n * rel);
                 }
+                // No removal for small asteroids
             }
-            // destroy the ship
-            mWorld->FlagForRemoval(obj);
-            return;
         }
     }
 }
 
 
+
+void Asteroid::CreateSmallAsteroids()
+{
+    const int pieces = 2;
+    float speed = std::max(mVelocity.length(), 5.0f); // Ensure minimum speed
+
+    // Get the animation from AnimationManager
+    Animation* anim_ptr = AnimationManager::GetInstance().GetAnimationByName("asteroid1");
+    if (!anim_ptr) {
+        std::cerr << "Error: Animation 'asteroid1' not found." << std::endl;
+        return;
+    }
+
+    // Create a sprite using the animation
+    shared_ptr<Sprite> asteroid_sprite = make_shared<Sprite>(anim_ptr->GetWidth(), anim_ptr->GetHeight(), anim_ptr);
+    asteroid_sprite->SetLoopAnimation(true);
+
+    for (int i = 0; i < pieces; ++i) {
+        auto small = std::make_shared<Asteroid>(false);
+        // Slight offset to prevent immediate collisions
+        GLVector3f offset = GLVector3f((rand() % 10 - 5) / 10.0f, (rand() % 10 - 5) / 10.0f, 0.0f);
+        small->SetPosition(mPosition + offset);
+        float angleOff = static_cast<float>(rand() % 360);
+        float newAngle = mAngle + angleOff;
+
+        GLVector3f vel(
+            speed * cos(DEG2RAD * newAngle),
+            speed * sin(DEG2RAD * newAngle),
+            0.0f
+        );
+        small->SetVelocity(vel);
+        small->SetSprite(asteroid_sprite);
+        small->Init();
+        mWorld->AddObject(small);
+    }
+}
+/*
 void Asteroid::CreateSmallAsteroids()
 {
     // Spawn two smaller asteroids at current position
@@ -155,3 +174,4 @@ void Asteroid::CreateSmallAsteroids()
         mWorld->AddObject(small);
     }
 }
+*/
