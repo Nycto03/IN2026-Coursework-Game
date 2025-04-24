@@ -193,6 +193,36 @@ shared_ptr<GameObject> Asteroids::CreateSpaceship()
 
 }
 
+
+//Updated CreateAsteroids method so they do not spawn too close to player
+void Asteroids::CreateAsteroids(const uint num_asteroids)
+{
+	mAsteroidCount = num_asteroids;
+	for (uint i = 0; i < num_asteroids; i++) {
+		shared_ptr<Asteroid> asteroid = make_shared<Asteroid>(true);
+		GLVector3f pos;
+		// Generate a position at least 30 units away from the spaceship
+		do {
+			pos.x = (rand() / (float)RAND_MAX) * 200.0f - 100.0f; // World width: 200 units (-100 to 100)
+			pos.y = (rand() / (float)RAND_MAX) * 200.0f - 100.0f; // World height: 200 units (-100 to 100)
+			pos.z = 0.0f;
+		} while ((pos - mSpaceship->GetPosition()).length() < 30.0f); // Minimum distance of 30 units
+		asteroid->SetPosition(pos);
+
+		// Set up asteroid sprite and properties
+		Animation* anim_ptr = AnimationManager::GetInstance().GetAnimationByName("asteroid1");
+		shared_ptr<Sprite> asteroid_sprite = make_shared<Sprite>(anim_ptr->GetWidth(), anim_ptr->GetHeight(), anim_ptr);
+		asteroid_sprite->SetLoopAnimation(true);
+		asteroid->SetSprite(asteroid_sprite);
+		asteroid->SetScale(0.2f);
+		asteroid->SetBoundingShape(make_shared<BoundingSphere>(asteroid->GetThisPtr(), 10.0f));
+
+		mGameWorld->AddObject(asteroid);
+	}
+}
+
+//Original CreateAsteroids method
+/*
 void Asteroids::CreateAsteroids(const uint num_asteroids)
 {
 	mAsteroidCount = num_asteroids;
@@ -209,6 +239,8 @@ void Asteroids::CreateAsteroids(const uint num_asteroids)
 		mGameWorld->AddObject(asteroid);
 	}
 }
+
+*/
 
 void Asteroids::CreateGUI()
 {

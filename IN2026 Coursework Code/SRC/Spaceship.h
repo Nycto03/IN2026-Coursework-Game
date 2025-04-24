@@ -27,12 +27,20 @@ public:
 	bool CollisionTest(shared_ptr<GameObject> o);
 	void OnCollision(const GameObjectList &objects);
 
+
+	void Reset();
+
 private:
 	float mThrust;
 
 	shared_ptr<Shape> mSpaceshipShape;
 	shared_ptr<Shape> mThrusterShape;
 	shared_ptr<Shape> mBulletShape;
+
+
+	bool mIsInvulnerable;
+	int mInvulnerabilityTimer; // Time in milliseconds
+	shared_ptr<BoundingShape> mOriginalBoundingShape; // Store the original shape
 };
 
 #endif
