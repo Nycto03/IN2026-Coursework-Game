@@ -17,12 +17,19 @@ public:
 
     void Init();
 
+                    
+    // Getter for mIsLarge
+    bool IsLarge() const { return mIsLarge; }
+
     bool CollisionTest(std::shared_ptr<GameObject> o) override;
     void OnCollision(const GameObjectList& objects) override;
 
 private:
-    bool mIsLarge;                // track large vs small
-    void CreateSmallAsteroids();  // spawn smaller pieces
+
+    // track large vs small
+    bool mIsLarge;
+    // spawn smaller pieces
+    void CreateSmallAsteroids();  
 
 
     // Radii for bounding spheres
