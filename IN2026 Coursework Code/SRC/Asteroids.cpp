@@ -24,21 +24,16 @@ namespace {
 	class PU_ExtraLife : public GameObject {
 	public:
 		PU_ExtraLife()
-			: GameObject("PowerUpExtraLife")
-		{
-
-		}
+			: GameObject("PowerUpExtraLife"){}
 
 			void Init() {
-				//Initialises animation
-				Animation* anim = AnimationManager::GetInstance()
-					.GetAnimationByName("animated heart");
-				auto sprite = std::make_shared<Sprite>(
-					anim->GetWidth(), anim->GetHeight(), anim);
+				//Initialises animation WIP
+				Animation* anim = AnimationManager::GetInstance().GetAnimationByName("animated heart");
+				shared_ptr<Sprite> heart_sprite = make_shared<Sprite>(anim->GetWidth(), anim->GetHeight(), anim);
+				heart_sprite->SetLoopAnimation(true);
+				//SetSprite(heart_sprite);
+				this->SetSprite(heart_sprite);
 
-
-					sprite->SetLoopAnimation(true);
-				SetSprite(sprite);
 
 				//Initialises shape
 				SetBoundingShape(std::make_shared<BoundingSphere>(GetThisPtr(), 5.0f));
@@ -68,20 +63,14 @@ namespace {
 	class PU_Invulnerability : public GameObject {
 	public:
 		PU_Invulnerability()
-			: GameObject("PowerUpInvulnerability")
-		{
-
-		}
+			: GameObject("PowerUpInvulnerability"){}
 
 		void Init() {
-			Animation* anim = AnimationManager::GetInstance()
-				.GetAnimationByName("animated star");
-			auto sprite = std::make_shared<Sprite>(
-				anim->GetWidth(), anim->GetHeight(), anim);
-
-
-				sprite->SetLoopAnimation(true);
-			SetSprite(sprite);
+			Animation* anim = AnimationManager::GetInstance().GetAnimationByName("animated star");
+			shared_ptr<Sprite> star_sprite = make_shared<Sprite>(anim->GetWidth(), anim->GetHeight(), anim);
+			star_sprite->SetLoopAnimation(true);
+			//SetSprite(star_sprite);
+			this->SetSprite(star_sprite);
 
 			SetBoundingShape(std::make_shared<BoundingSphere>(GetThisPtr(), 5.0f));
 
@@ -113,14 +102,10 @@ namespace {
 		}
 
 		void Init() {
-			Animation* anim = AnimationManager::GetInstance()
-				.GetAnimationByName("animated bullet");
-			auto sprite = std::make_shared<Sprite>(
-				anim->GetWidth(), anim->GetHeight(), anim);
-
-
-				sprite->SetLoopAnimation(true);
-			SetSprite(sprite);
+			Animation* anim = AnimationManager::GetInstance().GetAnimationByName("animated bullet");
+			shared_ptr<Sprite> bullet_sprite = make_shared<Sprite>(anim->GetWidth(), anim->GetHeight(), anim);
+			bullet_sprite->SetLoopAnimation(true);
+			SetSprite(bullet_sprite);
 
 			SetBoundingShape(std::make_shared<BoundingSphere>(GetThisPtr(), 5.0f));
 
@@ -143,7 +128,7 @@ namespace {
 			mWorld->FlagForRemoval(GetThisPtr());
 		}
 	};
-} // end anonymous namespace
+}
 
 
 // PUBLIC INSTANCE CONSTRUCTORS ///////////////////////////////////////////////
@@ -192,17 +177,10 @@ void Asteroids::Start()
 	Animation *asteroid1_anim = AnimationManager::GetInstance().CreateAnimationFromFile("asteroid1", 128, 8192, 128, 128, "asteroid1_fs.png");
 	Animation *spaceship_anim = AnimationManager::GetInstance().CreateAnimationFromFile("spaceship", 128, 128, 128, 128, "spaceship_fs.png");
 
-
-
-	Animation *bulletAnim = AnimationManager::GetInstance().CreateAnimationFromFile(
-		"animated bullet", 64, 16, 8, 16, "animated_bullet.png"
-	);
-	Animation *heartAnim = AnimationManager::GetInstance().CreateAnimationFromFile(
-		"animated heart", 192, 32, 32, 32, "animated_heart.png" 
-	);
-	Animation * tarAnim = AnimationManager::GetInstance().CreateAnimationFromFile(
-		"animated star", 256, 32, 32, 32, "animated_star.png"
-	);
+	//Power up animations, work in progress
+	Animation *bulletAnim = AnimationManager::GetInstance().CreateAnimationFromFile("animated bullet", 256, 32, 8, 16, "animated_bullet.png");
+	Animation *heartAnim = AnimationManager::GetInstance().CreateAnimationFromFile("animated heart", 368, 32, 32, 32, "animated_heart.png");
+	Animation *starAnim = AnimationManager::GetInstance().CreateAnimationFromFile("animated star", 256, 32, 32, 32, "animated_star.png");
 
 	// Create a spaceship and add it to the world
 	mGameWorld->AddObject(CreateSpaceship());
@@ -380,9 +358,9 @@ void Asteroids::OnTimer(int value)
 			}
 		}
 
-
+		//Places it in the world
 		pu->SetPosition(pos);
-		pu->SetScale(0.1f);
+		pu->SetScale(0.2f);
 		mGameWorld->AddObject(pu);
 
 		// reschedule…
@@ -476,7 +454,7 @@ void Asteroids::CreateGUI()
 
 
 
-
+	//Updates GUI with the invulnerability timer
 	mInvulnerabilityLabel = make_shared<GUILabel>("Invulnerability: 0s");
 	mInvulnerabilityLabel->SetVerticalAlignment(GUIComponent::GUI_VALIGN_TOP);
 	mInvulnerabilityLabel->SetHorizontalAlignment(GUIComponent::GUI_HALIGN_RIGHT);

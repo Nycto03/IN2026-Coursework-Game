@@ -31,6 +31,8 @@ public:
 
 
 	void AddPowerUpListener(std::shared_ptr<IPowerUpListener> listener) { mPowerUpListeners.push_back(listener); }
+
+	// Accessors for invulnerability and bullet size
 	void ActivateInvulnerability(int duration);
 	void BoostBulletSize(float boost);
 	float GetBulletRadius() const { return mBulletRadius; }
@@ -54,7 +56,7 @@ private:
 	shared_ptr<BoundingShape> mOriginalBoundingShape; // Store the original shape
 
 
-
+	//Bullet size variable able to be changed by power-ups
 	float mBulletRadius;
 	typedef std::list<std::shared_ptr<IPowerUpListener>> PowerUpListenerList;
 	PowerUpListenerList mPowerUpListeners;

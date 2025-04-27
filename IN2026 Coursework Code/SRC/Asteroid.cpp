@@ -50,12 +50,6 @@ Asteroid::~Asteroid(void)
 
 bool Asteroid::CollisionTest(shared_ptr<GameObject> o)
 {
-	//if (GetType() == o->GetType()) return false;
-	/*if (mBoundingShape.get() == NULL) return false;
-	if (o->GetBoundingShape().get() == NULL) return false;
-	return mBoundingShape->CollisionTest(o->GetBoundingShape());
-    */
-
     if (!mBoundingShape || !o->GetBoundingShape())
         return false;
     //stops the asteroids destroying powerups
@@ -141,7 +135,7 @@ void Asteroid::CreateSmallAsteroids()
 
     for (int i = 0; i < pieces; ++i) {
         auto small = std::make_shared<Asteroid>(false);
-        // Slight offset to prevent immediate collisions
+        // Slight offset to prevent immediate collisions on spawn
         GLVector3f offset = GLVector3f((rand() % 10 - 5) / 10.0f, (rand() % 10 - 5) / 10.0f, 0.0f);
         small->SetPosition(mPosition + offset);
         float angleOff = static_cast<float>(rand() % 360);
@@ -158,28 +152,3 @@ void Asteroid::CreateSmallAsteroids()
         mWorld->AddObject(small);
     }
 }
-/*
-void Asteroid::CreateSmallAsteroids()
-{
-    // Spawn two smaller asteroids at current position
-    const int pieces = 2;
-    float speed = mVelocity.length();
-    for (int i = 0; i < pieces; ++i) {
-        auto small = std::make_shared<Asteroid>(false);
-        // place at same spot
-        small->SetPosition(mPosition);
-        // give them random velocity based on original
-        float angleOff = static_cast<float>(rand() % 360);
-        float newAngle = mAngle + angleOff;
-
-        GLVector3f vel(
-            speed * cos(DEG2RAD * newAngle),
-            speed * sin(DEG2RAD * newAngle),
-            0.0f
-        );
-        small->SetVelocity(vel);
-        small->Init();
-        mWorld->AddObject(small);
-    }
-}
-*/

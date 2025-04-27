@@ -11,13 +11,6 @@
 using namespace std;
 
 // PUBLIC INSTANCE CONSTRUCTORS ///////////////////////////////////////////////
-
-
-
-
-
-
-//Updated Spaceship code
 /** Default constructor. */
 Spaceship::Spaceship()
     : GameObject("Spaceship"), mThrust(0), mIsInvulnerable(false), mInvulnerabilityTimer(0), mOriginalBoundingShape(nullptr), mBulletRadius(2.0f)
@@ -176,7 +169,10 @@ void Spaceship::OnCollision(const GameObjectList& objects) {
     }
 }
 
-//Power up methods
+
+
+
+/**Power up methods */
 void Spaceship::ActivateInvulnerability(int duration)
 {
     //utilises the variable I originally made as a spawn invulerability 

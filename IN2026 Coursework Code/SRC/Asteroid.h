@@ -7,7 +7,7 @@
 
 class Asteroid : public GameObject {
 public:
-    // Default ctor: creates a large asteroid
+    // Default constructor: creates a large asteroid
     Asteroid();
 
     // Creates a large (isLarge=true) or small (isLarge=false) asteroid
