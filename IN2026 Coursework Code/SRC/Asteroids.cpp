@@ -29,19 +29,29 @@ namespace {
 		PU_ExtraLife()
 			: GameObject("PowerUpExtraLife")
 		{
-			Animation* anim = AnimationManager::GetInstance()
-				.GetAnimationByName("animated heart");
-			auto sprite = std::make_shared<Sprite>(
-				anim->GetWidth(), anim->GetHeight(), anim
-			);
-			sprite->SetLoopAnimation(true);
-			SetSprite(sprite);
-			SetBoundingShape(std::make_shared<BoundingSphere>(GetThisPtr(), 5.0f));
-			float speed = (rand() / (float)RAND_MAX) * 2.0f + 1.0f;
-			float angle = (rand() / (float)RAND_MAX) * 2.0f * 3.14159f;
-			SetVelocity(GLVector3f(cos(angle) * speed, sin(angle) * speed, 0));
+
 		}
 
+			void Init() {
+				Animation* anim = AnimationManager::GetInstance()
+					.GetAnimationByName("animated heart");
+				auto sprite = std::make_shared<Sprite>(
+					anim->GetWidth(), anim->GetHeight(), anim);
+
+
+					sprite->SetLoopAnimation(true);
+				SetSprite(sprite);
+
+				SetBoundingShape(std::make_shared<BoundingSphere>(GetThisPtr(), 5.0f));
+
+				float speed = (rand() / (float)RAND_MAX) * 2.0f + 1.0f;
+				float angle = (rand() / (float)RAND_MAX) * 2.0f * 3.14159f;
+				SetVelocity(GLVector3f(cos(angle) * speed, sin(angle) * speed, 0));
+
+			}
+			
+		
+			// Only test collision against the ship
 		bool CollisionTest(std::shared_ptr<GameObject> o) override {
 			return o->GetType() == GameObjectType("Spaceship")
 				&& mBoundingShape
@@ -61,19 +71,29 @@ namespace {
 		PU_Invulnerability()
 			: GameObject("PowerUpInvulnerability")
 		{
+
+		}
+
+		void Init() {
 			Animation* anim = AnimationManager::GetInstance()
 				.GetAnimationByName("animated star");
 			auto sprite = std::make_shared<Sprite>(
-				anim->GetWidth(), anim->GetHeight(), anim
-			);
-			sprite->SetLoopAnimation(true);
+				anim->GetWidth(), anim->GetHeight(), anim);
+
+
+				sprite->SetLoopAnimation(true);
 			SetSprite(sprite);
+
 			SetBoundingShape(std::make_shared<BoundingSphere>(GetThisPtr(), 5.0f));
+
 			float speed = (rand() / (float)RAND_MAX) * 2.0f + 1.0f;
 			float angle = (rand() / (float)RAND_MAX) * 2.0f * 3.14159f;
 			SetVelocity(GLVector3f(cos(angle) * speed, sin(angle) * speed, 0));
+
 		}
 
+
+		// Only test collision against the ship
 		bool CollisionTest(std::shared_ptr<GameObject> o) override {
 			return o->GetType() == GameObjectType("Spaceship")
 				&& mBoundingShape
@@ -82,6 +102,7 @@ namespace {
 		}
 
 		void OnCollision(const GameObjectList& objs) override {
+			// remove self; let Spaceship::OnCollision handle the life increment
 			mWorld->FlagForRemoval(GetThisPtr());
 		}
 	};
@@ -92,19 +113,29 @@ namespace {
 		PU_BulletBoost()
 			: GameObject("PowerUpBulletSizeBoost")
 		{
+
+		}
+
+		void Init() {
 			Animation* anim = AnimationManager::GetInstance()
 				.GetAnimationByName("animated bullet");
 			auto sprite = std::make_shared<Sprite>(
-				anim->GetWidth(), anim->GetHeight(), anim
-			);
-			sprite->SetLoopAnimation(true);
+				anim->GetWidth(), anim->GetHeight(), anim);
+
+
+				sprite->SetLoopAnimation(true);
 			SetSprite(sprite);
+
 			SetBoundingShape(std::make_shared<BoundingSphere>(GetThisPtr(), 5.0f));
+
 			float speed = (rand() / (float)RAND_MAX) * 2.0f + 1.0f;
 			float angle = (rand() / (float)RAND_MAX) * 2.0f * 3.14159f;
 			SetVelocity(GLVector3f(cos(angle) * speed, sin(angle) * speed, 0));
+
 		}
 
+
+		// Only test collision against the ship
 		bool CollisionTest(std::shared_ptr<GameObject> o) override {
 			return o->GetType() == GameObjectType("Spaceship")
 				&& mBoundingShape
@@ -113,6 +144,7 @@ namespace {
 		}
 
 		void OnCollision(const GameObjectList& objs) override {
+			// remove self; let Spaceship::OnCollision handle the life increment
 			mWorld->FlagForRemoval(GetThisPtr());
 		}
 	};
@@ -194,13 +226,20 @@ void Asteroids::Start()
 	//Add a powerup listener
 	mSpaceship->AddPowerUpListener(thisPtr);
 
-	// Start the game
-	GameSession::Start();
+
+
 
 
 	// schedule the first power-up spawn in 5–15 seconds:
 	int delayMs = (rand() % 11 + 5) * 1000;   // 5–15s
 	SetTimer(delayMs, SPAWN_POWERUP);
+
+
+
+
+	// Start the game
+	GameSession::Start();
+
 }
 
 /** Stop the current game. */
@@ -318,13 +357,33 @@ void Asteroids::OnTimer(int value)
 
 		// choose one of the *local* classes:
 		shared_ptr<GameObject> pu;
-		switch (rand() % 3) {
-		case 0: pu = make_shared<PU_ExtraLife>();       break;
-		case 1: pu = make_shared<PU_Invulnerability>(); break;
-		default:pu = make_shared<PU_BulletBoost>();     break;
+		switch (rand() % 3)
+		{
+		case 0:
+		{
+			auto p = make_shared<PU_ExtraLife>();
+			p->Init();          // OK: p is PU_ExtraLife*
+			pu = p;
+			break;
+		}
+		case 1:
+		{
+			auto p = make_shared<PU_Invulnerability>();
+			p->Init();          // OK
+			pu = p;
+			break;
+		}
+		default:
+		{
+			auto p = make_shared<PU_BulletBoost>();
+			p->Init();          // OK
+			pu = p;
+			break;
+		}
 		}
 
 		pu->SetPosition(pos);
+		/*
 		Animation* anim = AnimationManager::GetInstance()
 			.GetAnimationByName("powerup");
 		auto spr = std::make_shared<Sprite>(
@@ -332,6 +391,7 @@ void Asteroids::OnTimer(int value)
 		);
 		spr->SetLoopAnimation(true);
 		pu->SetSprite(spr);
+		*/
 		pu->SetScale(0.1f);
 		mGameWorld->AddObject(pu);
 
