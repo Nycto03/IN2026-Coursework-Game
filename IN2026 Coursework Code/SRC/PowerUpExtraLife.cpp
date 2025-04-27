@@ -7,7 +7,7 @@
 // PowerUpExtraLife constructor
 PowerUpExtraLife::PowerUpExtraLife() : GameObject("PowerUpExtraLife")
 {
-    Animation *anim = AnimationManager::GetInstance().GetAnimationByName("animated heart");
+    Animation *anim = AnimationManager::GetInstance().GetAnimationByName("animated heart.png");
     auto sprite = std::make_shared<Sprite>(anim->GetWidth(), anim->GetHeight(), anim);
     sprite->SetLoopAnimation(true);
     SetSprite(sprite);
@@ -20,6 +20,7 @@ PowerUpExtraLife::PowerUpExtraLife() : GameObject("PowerUpExtraLife")
 
 bool PowerUpExtraLife::CollisionTest(std::shared_ptr<GameObject> o)
 {
+    //Only collides with ship
     if (o->GetType() != GameObjectType("Spaceship")) return false;
     if (mBoundingShape.get() == NULL) return false;
     if (o->GetBoundingShape().get() == NULL) return false;
@@ -30,7 +31,6 @@ void PowerUpExtraLife::OnCollision(const GameObjectList& objects)
 {
     for (const auto& obj : objects) {
         if (obj->GetType() == GameObjectType("Spaceship")) {
-            std::cout << "Extra Life power-up collected" << std::endl;
             mWorld->FlagForRemoval(GetThisPtr());
             break;
         }

@@ -18,12 +18,9 @@
 
 
 
-
+//namespace used to set up the power ups, the game would not compile otherwise
 namespace {
-	//
-	// -- Inline PowerUp Definitions --
-	//
-	// (1) Extra Life
+	//Extra Life
 	class PU_ExtraLife : public GameObject {
 	public:
 		PU_ExtraLife()
@@ -33,6 +30,7 @@ namespace {
 		}
 
 			void Init() {
+				//Initialises animation
 				Animation* anim = AnimationManager::GetInstance()
 					.GetAnimationByName("animated heart");
 				auto sprite = std::make_shared<Sprite>(
@@ -42,6 +40,7 @@ namespace {
 					sprite->SetLoopAnimation(true);
 				SetSprite(sprite);
 
+				//Initialises shape
 				SetBoundingShape(std::make_shared<BoundingSphere>(GetThisPtr(), 5.0f));
 
 				float speed = (rand() / (float)RAND_MAX) * 2.0f + 1.0f;
@@ -65,7 +64,7 @@ namespace {
 		}
 	};
 
-	// (2) Invulnerability
+	//Invulnerability
 	class PU_Invulnerability : public GameObject {
 	public:
 		PU_Invulnerability()
@@ -92,8 +91,6 @@ namespace {
 
 		}
 
-
-		// Only test collision against the ship
 		bool CollisionTest(std::shared_ptr<GameObject> o) override {
 			return o->GetType() == GameObjectType("Spaceship")
 				&& mBoundingShape
@@ -102,12 +99,11 @@ namespace {
 		}
 
 		void OnCollision(const GameObjectList& objs) override {
-			// remove self; let Spaceship::OnCollision handle the life increment
 			mWorld->FlagForRemoval(GetThisPtr());
 		}
 	};
 
-	// (3) Bullet Size Boost
+	//Bullet Size Boost
 	class PU_BulletBoost : public GameObject {
 	public:
 		PU_BulletBoost()
@@ -135,7 +131,7 @@ namespace {
 		}
 
 
-		// Only test collision against the ship
+
 		bool CollisionTest(std::shared_ptr<GameObject> o) override {
 			return o->GetType() == GameObjectType("Spaceship")
 				&& mBoundingShape
@@ -144,7 +140,6 @@ namespace {
 		}
 
 		void OnCollision(const GameObjectList& objs) override {
-			// remove self; let Spaceship::OnCollision handle the life increment
 			mWorld->FlagForRemoval(GetThisPtr());
 		}
 	};
@@ -336,62 +331,57 @@ void Asteroids::OnTimer(int value)
 		mGameOverLabel->SetVisible(true);
 	}
 
-
-
-
 	else if (value == UPDATE_INVULNERABILITY)
 	{
-		int timeLeft = mSpaceship->IsInvulnerable() ? mSpaceship->GetInvulnerabilityTimer() / 1000 : 0;
-		if (timeLeft > 0) {
+		int timeLeftSec = mSpaceship->GetInvulnerabilityTimer() / 1000;
+		// Update the on-screen countdown
+		std::ostringstream ss;
+		ss << "Invulnerability: " << timeLeftSec << "s";
+		mInvulnerabilityLabel->SetText(ss.str());
+
+		if (timeLeftSec > 0) {
+			// schedule next tick in 1s
 			SetTimer(1000, UPDATE_INVULNERABILITY);
+		}
+		else {
+			// hide countdown when time is up
+			mInvulnerabilityLabel->SetVisible(false);
 		}
 	}
 
 
 
 	if (value == SPAWN_POWERUP) {
-		// pick random spot…
+		// pick random location
 		float x = (rand() / (float)RAND_MAX) * 200.f - 100.f;
 		float y = (rand() / (float)RAND_MAX) * 200.f - 100.f;
 		GLVector3f pos(x, y, 0);
 
-		// choose one of the *local* classes:
+		// pick a random power up
 		shared_ptr<GameObject> pu;
-		switch (rand() % 3)
-		{
-		case 0:
-		{
+		switch (rand() % 3) {
+		case 0: {
 			auto p = make_shared<PU_ExtraLife>();
-			p->Init();          // OK: p is PU_ExtraLife*
+			p->Init();        // call Init() on the ExtraLife object
 			pu = p;
 			break;
 		}
-		case 1:
-		{
+		case 1: {
 			auto p = make_shared<PU_Invulnerability>();
-			p->Init();          // OK
+			p->Init();        // call Init() on the Invulnerability object
 			pu = p;
 			break;
 		}
-		default:
-		{
+		default: {
 			auto p = make_shared<PU_BulletBoost>();
-			p->Init();          // OK
+			p->Init();        // call Init() on the BulletBoost object
 			pu = p;
 			break;
-		}
+			}
 		}
 
+
 		pu->SetPosition(pos);
-		/*
-		Animation* anim = AnimationManager::GetInstance()
-			.GetAnimationByName("powerup");
-		auto spr = std::make_shared<Sprite>(
-			anim->GetWidth(), anim->GetHeight(), anim
-		);
-		spr->SetLoopAnimation(true);
-		pu->SetSprite(spr);
-		*/
 		pu->SetScale(0.1f);
 		mGameWorld->AddObject(pu);
 
@@ -399,47 +389,6 @@ void Asteroids::OnTimer(int value)
 		int next = (rand() % 11 + 5) * 1000;
 		SetTimer(next, SPAWN_POWERUP);
 	}
-
-
-	/*
-	if (value == SPAWN_POWERUP)
-	{
-		//Pick a random position to spawn a powerup
-		float x = (rand() / (float)RAND_MAX) * 200.0f - 100.0f;
-		float y = (rand() / (float)RAND_MAX) * 200.0f - 100.0f;
-		GLVector3f pos(x, y, 0);
-
-		//randomly choose which power-up
-		
-		shared_ptr<GameObject> pu;
-		switch (rand() % 3)
-		{
-		case 0: pu = make_shared<PowerUpExtraLife>();      break;
-		case 1: pu = make_shared<PowerUpInvulnerability>(); break;
-		default:pu = make_shared<PowerUpBulletSizeBoost>(); break;
-		}
-		
-
-
-		//Set it up 
-		
-		pu->SetPosition(pos);
-		
-		Animation* anim = AnimationManager::GetInstance().GetAnimationByName("powerup");
-		auto sprite = make_shared<Sprite>(anim->GetWidth(),anim->GetHeight(), anim);
-		sprite->SetLoopAnimation(true);
-		pu->SetSprite(sprite);
-		pu->SetScale(0.1f);
-		
-
-		mGameWorld->AddObject(pu);
-
-
-		//Schedule the next spawn in another 5–15s
-		int nextDelay = (rand() % 11 + 5) * 1000;
-		SetTimer(nextDelay, SPAWN_POWERUP);
-	}
-	*/
 }
 
 // PROTECTED INSTANCE METHODS /////////////////////////////////////////////////
@@ -490,27 +439,6 @@ void Asteroids::CreateAsteroids(const uint num_asteroids)
 		mGameWorld->AddObject(asteroid);
 	}
 }
-
-//Original CreateAsteroids method
-/*
-void Asteroids::CreateAsteroids(const uint num_asteroids)
-{
-	mAsteroidCount = num_asteroids;
-	for (uint i = 0; i < num_asteroids; i++)
-	{
-		Animation *anim_ptr = AnimationManager::GetInstance().GetAnimationByName("asteroid1");
-		shared_ptr<Sprite> asteroid_sprite
-			= make_shared<Sprite>(anim_ptr->GetWidth(), anim_ptr->GetHeight(), anim_ptr);
-		asteroid_sprite->SetLoopAnimation(true);
-		shared_ptr<GameObject> asteroid = make_shared<Asteroid>();
-		asteroid->SetBoundingShape(make_shared<BoundingSphere>(asteroid->GetThisPtr(), 10.0f));
-		asteroid->SetSprite(asteroid_sprite);
-		asteroid->SetScale(0.2f);
-		mGameWorld->AddObject(asteroid);
-	}
-}
-
-*/
 
 void Asteroids::CreateGUI()
 {
@@ -620,7 +548,7 @@ void Asteroids::OnPowerUpActivated(const std::string& powerUp, int duration)
 		//Pull back the new total
 		int newLives = mPlayer.GetLives();
 
-		//updates the on-screen label exactly as OnPlayerKilled does
+		//updates the on-screen label
 		std::ostringstream ss;
 		ss << "Lives: " << newLives;
 		mLivesLabel->SetText(ss.str());
@@ -630,6 +558,7 @@ void Asteroids::OnPowerUpActivated(const std::string& powerUp, int duration)
 void Asteroids::OnPowerUpDeactivated(const std::string& powerUp)
 {
 	if (powerUp == "Invulnerability") {
+		//When not active the power up timer is not visible
 		mInvulnerabilityLabel->SetVisible(false);
 	}
 	

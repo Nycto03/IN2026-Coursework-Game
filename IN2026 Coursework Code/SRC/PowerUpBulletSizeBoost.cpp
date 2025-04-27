@@ -8,7 +8,7 @@
 // PowerUpBulletSizeBoost constructor
 PowerUpBulletSizeBoost::PowerUpBulletSizeBoost() : GameObject("PowerUpBulletSizeBoost")
 {
-    Animation *anim = AnimationManager::GetInstance().GetAnimationByName("animated bullet");
+    Animation *anim = AnimationManager::GetInstance().GetAnimationByName("animated bullet.png");
     auto sprite = std::make_shared<Sprite>(anim->GetWidth(), anim->GetHeight(), anim);
     sprite->SetLoopAnimation(true);
     SetSprite(sprite);
@@ -24,6 +24,7 @@ PowerUpBulletSizeBoost::~PowerUpBulletSizeBoost();
 
 bool PowerUpBulletSizeBoost::CollisionTest(std::shared_ptr<GameObject> o)
 {
+    //Only collides with the spaceship
     if (o->GetType() != GameObjectType("Spaceship")) return false;
     if (mBoundingShape.get() == NULL) return false;
     if (o->GetBoundingShape().get() == NULL) return false;
@@ -34,7 +35,6 @@ void PowerUpBulletSizeBoost::OnCollision(const GameObjectList& objects)
 {
     for (const auto& obj : objects) {
         if (obj->GetType() == GameObjectType("Spaceship")) {
-            std::cout << "Bullet Size Boost power-up collected" << std::endl;
             mWorld->FlagForRemoval(GetThisPtr());
             break;
         }

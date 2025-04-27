@@ -58,6 +58,11 @@ bool Asteroid::CollisionTest(shared_ptr<GameObject> o)
 
     if (!mBoundingShape || !o->GetBoundingShape())
         return false;
+    //stops the asteroids destroying powerups
+    else if (o->GetType() == GameObjectType("PowerUpExtraLife") ||
+        o->GetType() == GameObjectType("PowerUpInvulnerability") ||
+        o->GetType() == GameObjectType("PowerUpBulletSizeBoost"))
+        return false;
     return mBoundingShape->CollisionTest(o->GetBoundingShape());
 
 }
