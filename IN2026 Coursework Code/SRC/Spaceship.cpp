@@ -4,6 +4,9 @@
 #include "Spaceship.h"
 #include "BoundingSphere.h"
 #include "Asteroid.h"
+#include "PowerUpExtraLife.h"
+#include "PowerUpInvulnerability.h"
+#include "PowerUpBulletSizeBoost.h"
 
 using namespace std;
 
@@ -17,7 +20,7 @@ using namespace std;
 //Updated Spaceship code
 /** Default constructor. */
 Spaceship::Spaceship()
-    : GameObject("Spaceship"), mThrust(0), mIsInvulnerable(false), mInvulnerabilityTimer(0), mOriginalBoundingShape(nullptr)
+    : GameObject("Spaceship"), mThrust(0), mIsInvulnerable(false), mInvulnerabilityTimer(0), mOriginalBoundingShape(nullptr), mBulletRadius(2.0f)
 {
 }
 
@@ -29,7 +32,7 @@ Spaceship::Spaceship(GLVector3f p, GLVector3f v, GLVector3f a, GLfloat h, GLfloa
 
 /** Copy constructor. */
 Spaceship::Spaceship(const Spaceship& s)
-    : GameObject(s), mThrust(0), mIsInvulnerable(s.mIsInvulnerable), mInvulnerabilityTimer(s.mInvulnerabilityTimer), mOriginalBoundingShape(s.mOriginalBoundingShape)
+    : GameObject(s), mThrust(0), mIsInvulnerable(s.mIsInvulnerable), mInvulnerabilityTimer(s.mInvulnerabilityTimer), mBulletRadius(s.mBulletRadius), mOriginalBoundingShape(s.mOriginalBoundingShape)
 {
 }
 
@@ -69,14 +72,12 @@ void Spaceship::Update(int t)
 {
     if (mIsInvulnerable) {
         mInvulnerabilityTimer -= t;
-        if (mInvulnerabilityTimer <= 0) {
-            if (mOriginalBoundingShape) {
-                mBoundingShape = mOriginalBoundingShape;
-            }
+        if (mInvulnerabilityTimer <= 0 && mOriginalBoundingShape) {
+            mBoundingShape = mOriginalBoundingShape;
             mIsInvulnerable = false;
+            FirePowerUpDeactivated("Invulnerability");
         }
     }
-
     // Call parent update function
     GameObject::Update(t);
 }
@@ -126,7 +127,7 @@ void Spaceship::Shoot(void)
     // Construct a new bullet
     shared_ptr<GameObject> bullet
     (new Bullet(bullet_position, bullet_velocity, mAcceleration, mAngle, 0, 2000));
-    bullet->SetBoundingShape(make_shared<BoundingSphere>(bullet->GetThisPtr(), 2.0f));
+    bullet->SetBoundingShape(make_shared<BoundingSphere>(bullet->GetThisPtr(), mBulletRadius));
     bullet->SetShape(mBulletShape);
     // Add the new bullet to the game world
     mWorld->AddObject(bullet);
@@ -134,7 +135,16 @@ void Spaceship::Shoot(void)
 
 bool Spaceship::CollisionTest(shared_ptr<GameObject> o)
 {
-    if (o->GetType() != GameObjectType("Asteroid")) return false;
+
+
+    if (mIsInvulnerable) return false;
+    if (o->GetType() != GameObjectType("Asteroid") &&
+        o->GetType() != GameObjectType("PowerUpExtraLife") &&
+        o->GetType() != GameObjectType("PowerUpInvulnerability") &&
+        o->GetType() != GameObjectType("PowerUpBulletSizeBoost")) return false;
+    
+    
+    //if (o->GetType() != GameObjectType("Asteroid")) return false;
     if (mBoundingShape.get() == NULL) return false;
     if (o->GetBoundingShape().get() == NULL) return false;
     return mBoundingShape->CollisionTest(o->GetBoundingShape());
@@ -142,11 +152,21 @@ bool Spaceship::CollisionTest(shared_ptr<GameObject> o)
 
 void Spaceship::OnCollision(const GameObjectList& objects) {
     for (const auto& obj : objects) {
-        if (obj->GetType() == GameObjectType("Asteroid")) {
+        GameObjectType objType = obj->GetType();
+        if (objType == GameObjectType("Asteroid")) {
             auto asteroid = std::static_pointer_cast<Asteroid>(obj);  
             if (asteroid->IsLarge()) {                               
                 mWorld->FlagForRemoval(GetThisPtr());
             }
+        }
+        else if (objType == GameObjectType("PowerUpExtraLife")) {
+            FirePowerUpActivated("ExtraLife", 0);
+        }
+        else if (objType == GameObjectType("PowerUpInvulnerability")) {
+            ActivateInvulnerability(10000); // 10 seconds
+        }
+        else if (objType == GameObjectType("PowerUpBulletSizeBoost")) {
+            BoostBulletSize(1.5f); // Increase radius by 50%
         }
     }
 }
@@ -259,3 +279,34 @@ void Spaceship::OnCollision(const GameObjectList& objects)
 
 */
 
+
+
+//Power up methods
+void Spaceship::ActivateInvulnerability(int duration)
+{
+    //utilises the variable I originally made as a spawn invulerability 
+    mIsInvulnerable = true;
+    mInvulnerabilityTimer = duration;
+    mBoundingShape = nullptr;
+    FirePowerUpActivated("Invulnerability", duration);
+}
+
+
+void Spaceship::BoostBulletSize(float boost)
+{
+    mBulletRadius *= boost;
+}
+
+void Spaceship::FirePowerUpActivated(const std::string& powerUp, int duration)
+{
+    for (PowerUpListenerList::iterator lit = mPowerUpListeners.begin(); lit != mPowerUpListeners.end(); ++lit) {
+        (*lit)->OnPowerUpActivated(powerUp, duration);
+    }
+}
+
+void Spaceship::FirePowerUpDeactivated(const std::string& powerUp)
+{
+    for (PowerUpListenerList::iterator lit = mPowerUpListeners.begin(); lit != mPowerUpListeners.end(); ++lit) {
+        (*lit)->OnPowerUpDeactivated(powerUp);
+    }
+}

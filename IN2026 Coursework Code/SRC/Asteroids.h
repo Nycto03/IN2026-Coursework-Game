@@ -9,12 +9,13 @@
 #include "ScoreKeeper.h"
 #include "Player.h"
 #include "IPlayerListener.h"
+#include "IPowerUpListener.h"
 
 class GameObject;
 class Spaceship;
 class GUILabel;
 
-class Asteroids : public GameSession, public IKeyboardListener, public IGameWorldListener, public IScoreListener, public IPlayerListener
+class Asteroids : public GameSession, public IKeyboardListener, public IGameWorldListener, public IScoreListener, public IPlayerListener, public IPowerUpListener
 {
 public:
 	Asteroids(int argc, char *argv[]);
@@ -47,11 +48,18 @@ public:
 	// Override the default implementation of ITimerListener ////////////////////
 	void OnTimer(int value);
 
+
+
+	void OnPowerUpActivated(const std::string& powerUp, int duration) override;
+	void OnPowerUpDeactivated(const std::string& powerUp) override;
+
+
 private:
 	shared_ptr<Spaceship> mSpaceship;
 	shared_ptr<GUILabel> mScoreLabel;
 	shared_ptr<GUILabel> mLivesLabel;
 	shared_ptr<GUILabel> mGameOverLabel;
+	shared_ptr<GUILabel> mInvulnerabilityLabel;
 
 	uint mLevel;
 	uint mAsteroidCount;
@@ -65,6 +73,8 @@ private:
 	const static uint SHOW_GAME_OVER = 0;
 	const static uint START_NEXT_LEVEL = 1;
 	const static uint CREATE_NEW_PLAYER = 2;
+	const static uint UPDATE_INVULNERABILITY = 3;
+	const static uint SPAWN_POWERUP = 4;
 
 	ScoreKeeper mScoreKeeper;
 	Player mPlayer;

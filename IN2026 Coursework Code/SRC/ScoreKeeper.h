@@ -8,11 +8,12 @@
 #include "IScoreListener.h"
 #include "IGameWorldListener.h"
 #include "Asteroid.h"
+#include "IPlayerListener.h"
 
 class ScoreKeeper : public IGameWorldListener
 {
 public:
-	ScoreKeeper() { mScore = 0; }
+	ScoreKeeper() { mScore = 0; mLives = 3;}
 	virtual ~ScoreKeeper() {}
 
 	void OnWorldUpdated(GameWorld* world) {}
@@ -32,6 +33,16 @@ public:
 				FireScoreChanged();
 			}
 		}
+		else if (object->GetType() == GameObjectType("PowerUpExtraLife")) {
+			std::cout << "Extra life granted" << std::endl;
+			mLives++;
+			FirePlayerKilled(mLives);
+		}
+		else if (object->GetType() == GameObjectType("Spaceship")) {
+			std::cout << "Spaceship removed, deducting life" << std::endl;
+			mLives--;
+			FirePlayerKilled(mLives);
+		}
 	}
 
 	void AddListener(shared_ptr<IScoreListener> listener)
@@ -47,12 +58,37 @@ public:
 		}
 	}
 
+
+
+
+	void OnPlayerKilled(int lives_left)
+	{
+		FirePlayerKilled(lives_left);
+	}
+
+	void AddPlayerListener(shared_ptr<IPlayerListener> listener)
+	{
+		mPlayerListeners.push_back(listener);
+	}
+
+	void FirePlayerKilled(int lives_left)
+	{
+		for (PlayerListenerList::iterator lit = mPlayerListeners.begin(); lit != mPlayerListeners.end(); ++lit) {
+			(*lit)->OnPlayerKilled(lives_left);
+		}
+	}
+
 private:
 	int mScore;
 
 	typedef std::list< shared_ptr<IScoreListener> > ScoreListenerList;
 
 	ScoreListenerList mListeners;
+
+
+	int mLives;
+	typedef std::list< shared_ptr<IPlayerListener> > PlayerListenerList;
+	PlayerListenerList mPlayerListeners;
 };
 
 #endif

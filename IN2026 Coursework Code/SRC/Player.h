@@ -40,6 +40,10 @@ public:
 		}
 	}
 
+
+	void GrantExtraLife() { ++mLives; }
+	int  GetLives() const { return mLives; }
+
 private:
 	int mLives;
 

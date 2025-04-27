@@ -4,8 +4,7 @@
 #include "GameObject.h"
 #include "BoundingSphere.h"
 
-class PowerUpBulletSizeBoost : public GameObject
-{
+class PowerUpBulletSizeBoost : public GameObject{
 public:
     PowerUpBulletSizeBoost();
     virtual ~PowerUpBulletSizeBoost() {}
